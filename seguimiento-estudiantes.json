@@ -1,0 +1,20 @@
+{
+  "materia": "Programación III",
+  "anio": 2026,
+  "laboratorio": "WebSocket y MQTT",
+  "repositorio_base": "https://github.com/IES9018/laboratorio-websocket-mqtt-2026",
+  "ultima_actualizacion": "2026-04-13",
+  "estudiantes": [
+    {"nombre": "Agustinagnz", "github": "Agustinagnz", "repo_fork": "https://github.com/Agustinagnz/laboratorio-websocket-mqtt-2026", "estado": "pendiente", "prs": 0, "observaciones": ""},
+    {"nombre": "AlejandroPardo98", "github": "AlejandroPardo98", "repo_fork": "https://github.com/AlejandroPardo98/laboratorio-websocket-mqtt-2026", "estado": "pendiente", "prs": 0, "observaciones": ""},
+    {"nombre": "AndyParada", "github": "AndyParada", "repo_fork": "https://github.com/AndyParada/laboratorio-websocket-mqtt-2026", "estado": "pendiente", "prs": 0, "observaciones": ""},
+    {"nombre": "Anmonte", "github": "Anmonte", "repo_fork": "https://github.com/Anmonte/laboratorio-websocket-mqtt-2026", "estado": "pendiente", "prs": 0, "observaciones": ""},
+    {"nombre": "Chamaheleonn", "github": "Chamaheleonn", "repo_fork": "https://github.com/Chamaheleonn/laboratorio-websocket-mqtt-2026", "estado": "pendiente", "prs": 0, "observaciones": ""},
+    {"nombre": "ClaudioMPerez", "github": "ClaudioMPerez", "repo_fork": "https://github.com/ClaudioMPerez/laboratorio-websocket-mqtt-2026", "estado": "pendiente", "prs": 0, "observaciones": ""},
+    {"nombre": "Damian-Coria", "github": "Damian-Coria", "repo_fork": "https://github.com/Damian-Coria/laboratorio-websocket-mqtt-2026", "estado": "pendiente", "prs": 0, "observaciones": ""},
+    {"nombre": "Eze", "github": "Ezem700", "repo_fork": "https://github.com/Ezem700/laboratorio-websocket-mqtt-2026", "estado": "pendiente", "prs": 0, "observaciones": ""},
+    {"nombre": "Jesica1487", "github": "Jesica1487", "repo_fork": "https://github.com/Jesica1487/laboratorio-websocket-mqtt-2026", "estado": "pendiente", "prs": 0, "observaciones": ""},
+    {"nombre": "KrellLeonardo", "github": "KrellLeonardo", "repo_fork": "https://github.com/KrellLeonardo/laboratorio-websocket-mqtt-2026", "estado": "pendiente", "prs": 0, "observaciones": ""},
+    {"nombre": "Lautaro Lopez", "github": "LL1121", "repo_fork": "https://github.com/LL1121/laboratorio-websocket-mqtt-2026", "estado": "pendiente", "prs": 0, "observaciones": ""}
+  ]
+}
