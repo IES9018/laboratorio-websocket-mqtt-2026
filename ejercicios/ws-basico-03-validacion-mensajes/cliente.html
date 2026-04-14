@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WS Basico 03 - Validacion</title>
+</head>
+<body>
+  <h1>WS Basico 03 - Validacion de JSON</h1>
+  <p>Conectar a ws://localhost:8803</p>
+  <textarea id="msg" rows="5" cols="60">{"usuario":"equipo1","mensaje":"hola"}</textarea>
+  <br />
+  <button id="send">Enviar JSON</button>
+  <pre id="log"></pre>
+
+  <script>
+    const log = document.getElementById('log');
+    const input = document.getElementById('msg');
+    const btn = document.getElementById('send');
+    const ws = new WebSocket('ws://localhost:8803');
+
+    const add = (t) => { log.textContent += t + '\n'; };
+    ws.onopen = () => add('Conectado');
+    ws.onmessage = (e) => add('Servidor: ' + e.data);
+    ws.onclose = () => add('Conexion cerrada');
+
+    btn.onclick = () => {
+      ws.send(input.value);
+      add('Cliente: ' + input.value);
+    };
+  </script>
+</body>
+</html>

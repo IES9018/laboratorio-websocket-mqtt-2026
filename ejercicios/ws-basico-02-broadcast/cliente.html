@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WS Basico 02 - Broadcast</title>
+</head>
+<body>
+  <h1>WS Basico 02 - Broadcast</h1>
+  <p>Abri esta pagina en dos pestañas para ver el broadcast.</p>
+  <input id="msg" placeholder="mensaje para todos" />
+  <button id="send">Enviar</button>
+  <pre id="log"></pre>
+
+  <script>
+    const log = document.getElementById('log');
+    const input = document.getElementById('msg');
+    const btn = document.getElementById('send');
+    const ws = new WebSocket('ws://localhost:8802');
+
+    const add = (t) => { log.textContent += t + '\n'; };
+    ws.onopen = () => add('Conectado');
+    ws.onmessage = (e) => add('Servidor: ' + e.data);
+    ws.onclose = () => add('Conexion cerrada');
+
+    btn.onclick = () => {
+      ws.send(input.value);
+      add('Cliente: ' + input.value);
+      input.value = '';
+    };
+  </script>
+</body>
+</html>

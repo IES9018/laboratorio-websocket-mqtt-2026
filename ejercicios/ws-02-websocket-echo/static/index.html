@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WebSocket Echo - IES9018</title>
+  <style>
+    body { font-family: sans-serif; margin: 24px; }
+    #log { border: 1px solid #ccc; padding: 12px; min-height: 180px; }
+    input, button { padding: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Cliente WebSocket</h1>
+  <p>Conectar contra <strong>ws://localhost:8765</strong></p>
+
+  <div>
+    <input id="msg" placeholder="Escribe un mensaje" />
+    <button id="send">Enviar</button>
+  </div>
+
+  <h3>Log</h3>
+  <div id="log"></div>
+
+  <script>
+    const log = document.getElementById('log');
+    const input = document.getElementById('msg');
+    const button = document.getElementById('send');
+
+    const ws = new WebSocket('ws://localhost:8765');
+
+    function add(text) {
+      const p = document.createElement('p');
+      p.textContent = text;
+      log.appendChild(p);
+    }
+
+    ws.onopen = () => add('Conectado');
+    ws.onmessage = (e) => add('Servidor: ' + e.data);
+    ws.onclose = () => add('Conexion cerrada');
+    ws.onerror = () => add('Error de conexion');
+
+    button.onclick = () => {
+      const value = input.value;
+      ws.send(value);
+      add('Cliente: ' + value);
+      input.value = '';
+    };
+  </script>
+</body>
+</html>
