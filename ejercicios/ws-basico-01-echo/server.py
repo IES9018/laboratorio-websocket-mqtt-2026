@@ -1,22 +1,13 @@
 import asyncio
-from websockets.asyncio.server import serve
+from websockets import serve  # Cambiado para compatibilidad
 
-
-async def handler(websocket):
-    await websocket.send("Conectado: ejercicio ws-basico-01-echo")
+async def echo(websocket):
     async for message in websocket:
-        texto = message.strip()
-        if not texto:
-            await websocket.send("Error: mensaje vacio")
-            continue
-        await websocket.send(f"Eco => {texto}")
+        await websocket.send(message)
 
-
-async def main() -> None:
-    async with serve(handler, "0.0.0.0", 8801):
-        print("Servidor WS Echo en ws://localhost:8801")
-        await asyncio.Future()
-
+async def main():
+    async with serve(echo, "localhost", 8765):
+        await asyncio.Future()  # run forever
 
 if __name__ == "__main__":
     asyncio.run(main())
