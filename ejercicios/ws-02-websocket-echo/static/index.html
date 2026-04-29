@@ -8,43 +8,99 @@
     body { font-family: sans-serif; margin: 24px; }
     #log { border: 1px solid #ccc; padding: 12px; min-height: 180px; }
     input, button { padding: 8px; }
+    .error { color: red; }
+    .info { font-size: 0.9em; color: #555; }
   </style>
 </head>
 <body>
-  <h1>Cliente WebSocket</h1>
+  <h1>Cliente WebSocket con validación</h1>
   <p>Conectar contra <strong>ws://localhost:8765</strong></p>
 
   <div>
-    <input id="msg" placeholder="Escribe un mensaje" />
+    <input id="msg" placeholder="Escribe un mensaje (máx. 200 caracteres)" />
     <button id="send">Enviar</button>
+    <span id="charCount" class="info">0 / 200</span>
   </div>
 
   <h3>Log</h3>
-  <div id="log"></div>
+  <div id="log"></div> 
 
   <script>
     const log = document.getElementById('log');
     const input = document.getElementById('msg');
     const button = document.getElementById('send');
+    const charCountSpan = document.getElementById('charCount');
+
+    // ---------- Obtener nombre de usuario (obligatorio y <=30) ----------
+    let username = null;
+    while (!username || !username.trim() || username.trim().length > 30) {
+      username = prompt("Por favor, introduce tu nombre de usuario (obligatorio, máx. 30 caracteres):");
+      
+      if (username === null) {
+        // El usuario canceló el prompt
+        const salir = confirm("¿Quieres salir? Sin nombre no puedes continuar.");
+        if (salir) {
+          document.body.innerHTML = "<h2>Es necesario un nombre para usar el chat. Recarga la página para intentarlo de nuevo.</h2>";
+          throw new Error("Nombre de usuario requerido");
+        }
+        username = null;
+        continue;
+      }
+
+      username = username.trim();
+      
+      if (username.length === 0) {
+        alert("El nombre no puede estar vacío o contener solo espacios.");
+        username = null;
+      } else if (username.length > 30) {
+        alert("El nombre no puede superar los 30 caracteres.");
+        username = null;
+      }
+    }
+    // ----------------------------------------------------------------
 
     const ws = new WebSocket('ws://localhost:8765');
 
-    function add(text) {
+    function add(text, isError = false) {
       const p = document.createElement('p');
       p.textContent = text;
+      if (isError) p.className = 'error';
       log.appendChild(p);
     }
 
-    ws.onopen = () => add('Conectado');
+    ws.onopen = () => {
+      add('Conectado como ' + username);
+      ws.send(username);  // envía el nombre al servidor
+    };
+
     ws.onmessage = (e) => add('Servidor: ' + e.data);
-    ws.onclose = () => add('Conexion cerrada');
-    ws.onerror = () => add('Error de conexion');
+    ws.onclose = () => add('Conexión cerrada');
+    ws.onerror = () => add('Error de conexión');
+
+    // Actualizar contador de caracteres en tiempo real
+    input.addEventListener('input', () => {
+      const len = input.value.length;
+      charCountSpan.textContent = `${len} / 200`;
+      if (len > 200) {
+        charCountSpan.style.color = 'red';
+      } else {
+        charCountSpan.style.color = '#555';
+      }
+    });
 
     button.onclick = () => {
       const value = input.value;
+      
+      // Validación de longitud máxima antes de enviar
+      if (value.length > 200) {
+        add('Error local: el mensaje no puede superar los 200 caracteres.', true);
+        return;  // no se envía
+      }
+      
       ws.send(value);
-      add('Cliente: ' + value);
+      add('Tú (' + username + '): ' + value);
       input.value = '';
+      charCountSpan.textContent = '0 / 200';  // resetear contador
     };
   </script>
 </body>
