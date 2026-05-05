@@ -1,11 +1,18 @@
 import asyncio
 import json
-import logging
+import sys
+import os
 from datetime import datetime
 from websockets import serve
 
-# Configurar logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Agregar el directorio actual al path para importar auth
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from auth import verificar_credenciales, parsear_mensaje_autenticacion, crear_mensaje_autenticacion, crear_token_autenticacion
+from logging_ws import crear_loggeador, NivelLog
+
+# Crear loggeador estructurado
+log = crear_loggeador("ws-validacion", NivelLog.INFO)
 
 # Capa de Dominio: Modelos y datos
 class Mensaje:
@@ -23,7 +30,8 @@ class Mensaje:
             "timestamp": self.timestamp.isoformat()
         }
 
-HISTORIAL = []  # Historial en memoria
+HISTORIAL = []
+usuarios_autenticados = {}
 
 # Capa de Aplicación: Lógica de negocio
 class Aplicacion:
@@ -56,11 +64,63 @@ class Aplicacion:
     @staticmethod
     def guardar_historial(mensaje):
         HISTORIAL.append(mensaje)
-        logging.info(f"Mensaje guardado en historial: {mensaje.usuario}: {mensaje.mensaje}")
+        log.info(
+            f"Mensaje guardado en historial",
+            tipo_evento="historial",
+            usuario=mensaje.usuario,
+            mensaje=mensaje.mensaje
+        )
 
-# Capa de Transporte: WebSocket handler
+# Capa de Transporte: WebSocket handler con autenticación
 async def handler(websocket):
-    logging.info("Cliente conectado")
+    cliente_id = id(websocket)
+    log.conexion_entrante(cliente_id, "localhost")
+    
+    # Solicitar autenticación
+    await websocket.send(crear_mensaje_autenticacion(
+        "auth_required",
+        "Autenticarse con JSON: {\"username\": \"...\", \"password\": \"...\"}"
+    ))
+    
+    try:
+        auth_message = await asyncio.wait_for(websocket.recv(), timeout=30)
+        credenciales = parsear_mensaje_autenticacion(auth_message)
+        
+        if credenciales is None:
+            await websocket.send(crear_mensaje_autenticacion("auth_error", "Formato inválido"))
+            await websocket.close(1008, "Auth fallida")
+            log.autenticacion_fallida(cliente_id, "formato inválido")
+            return
+            
+        username, password = credenciales
+        
+        if not verificar_credenciales(username, password):
+            await websocket.send(crear_mensaje_autenticacion("auth_error", "Credenciales inválidas"))
+            await websocket.close(1008, "Auth fallida")
+            log.autenticacion_fallida(cliente_id, "credenciales incorrectas")
+            return
+        
+        token = crear_token_autenticacion(username)
+        usuarios_autenticados[websocket] = {"username": username, "token": token}
+        
+        await websocket.send(crear_mensaje_autenticacion(
+            "auth_success",
+            f"Bienvenido {username}!",
+            {"token": token, "username": username}
+        ))
+        log.autenticacion_exitosa(cliente_id, username)
+        
+    except asyncio.TimeoutError:
+        await websocket.send(crear_mensaje_autenticacion("auth_error", "Timeout de autenticación"))
+        await websocket.close(1008, "Timeout")
+        log.autenticacion_fallida(cliente_id, "timeout")
+        return
+    except Exception as e:
+        log.error(f"Error en auth: {e}", cliente_id=cliente_id, error=str(e))
+        await websocket.close(1008, "Error")
+        return
+
+    # Mensaje de ayuda después de autenticado
     await websocket.send('Enviar JSON con formato: {"usuario":"ana", "mensaje":"hola", "tipo":"mensaje"} o {"tipo":"comando", "mensaje":"historial"}')
 
     try:
@@ -92,11 +152,14 @@ async def handler(websocket):
     except Exception as e:
         logging.error(f"Error en handler: {str(e)}")
     finally:
-        logging.info("Cliente desconectado")
+        if websocket in usuarios_autenticados:
+            usuario = usuarios_autenticados.pop(websocket)
+            logging.info(f"Usuario {usuario['username']} desconectado")
 
 async def main() -> None:
     async with serve(handler, "0.0.0.0", 8803):
-        logging.info("Servidor WS Validacion en ws://localhost:8803")
+        logging.info("Servidor WS Validacion con autenticación en ws://localhost:8803")
+        logging.info("Credenciales: admin/admin123, user/user123, invitado/invitado123")
         await asyncio.Future()
 
 if __name__ == "__main__":
