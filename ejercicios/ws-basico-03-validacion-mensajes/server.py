@@ -2,7 +2,7 @@ import asyncio
 import json
 from datetime import datetime
 
-from websockets.asyncio.server import serve
+from websockets.server import serve
 
 
 async def handler(websocket):

@@ -30,15 +30,13 @@ def main() -> None:
 
             respuesta = b"HTTP/1.1 200 OK\r\n"
             respuesta += b"Content-Type: text/html; charset=utf-8\r\n"
+            respuesta += b"Content-Length: " + str(len(html.encode("utf-8"))).encode("ascii") + b"\r\n"
+            respuesta += b"Connection: close\r\n"
             respuesta += b"\r\n"
             cliente.sendall(respuesta + html.encode("utf-8"))
             cliente.close()
-
-            time.sleep(0.5)
-            opcion = input("Desea cerrar el servidor? (s/n): ").lower().strip()
-            if opcion == "s":
-                print("Cerrando servidor...")
-                break
+    except KeyboardInterrupt:
+        print("\nServidor detenido por el usuario.")
     finally:
         sock.close()
 

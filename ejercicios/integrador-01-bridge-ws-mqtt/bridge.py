@@ -3,14 +3,41 @@ import json
 from datetime import datetime
 
 import paho.mqtt.client as mqtt
-from websockets.asyncio.server import serve
+from websockets.server import serve
 
-BROKER = "test.mosquitto.org"
+BROKERS = [
+    ("test.mosquitto.org", 1883),
+    ("broker.hivemq.com", 1883),
+    ("localhost", 1883),
+]
 PORT = 1883
 TOPIC = "ies9018/programacion3/bridge"
+connected_broker = None
+connected_port = None
+
+def on_connect(client, userdata, flags, rc):
+    if rc == 0:
+        print(f"Conectado a MQTT broker {connected_broker}:{connected_port}")
+    else:
+        print(f"Error de conexion MQTT: codigo {rc}")
 
 mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-mqtt_client.connect(BROKER, PORT, keepalive=60)
+mqtt_client.on_connect = on_connect
+mqtt_client.reconnect_delay_set(min_delay=1, max_delay=60)
+
+for broker, port in BROKERS:
+    try:
+        mqtt_client.connect(broker, port, keepalive=60)
+        connected_broker = broker
+        connected_port = port
+        break
+    except Exception as exc:
+        print(f"No se pudo conectar al broker MQTT {broker}:{port}: {exc}")
+
+if connected_broker is None:
+    print("No se pudo conectar a ningun broker MQTT. El bridge seguira corriendo sin MQTT.")
+else:
+    mqtt_client.loop_start()
 
 
 async def handler(websocket):

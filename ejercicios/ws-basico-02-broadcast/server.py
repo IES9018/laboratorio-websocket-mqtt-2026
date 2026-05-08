@@ -1,5 +1,5 @@
 import asyncio
-from websockets.asyncio.server import serve
+from websockets.server import serve
 
 CLIENTES = set()
 
