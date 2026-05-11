@@ -3,7 +3,8 @@ from datetime import datetime
 
 from websockets.asyncio.server import serve
 
-
+#el ejercicio esta realizado con mensaje lo envia correctamente 
+#y si el mensaje es vacio o tiene mas de 200 caracteres devuelve un error, el servidor se mantiene activo para recibir nuevos mensajes
 CLIENTES = set()
 
 
