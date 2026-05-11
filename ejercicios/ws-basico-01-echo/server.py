@@ -1,7 +1,7 @@
 import asyncio
 from websockets.asyncio.server import serve
 
-
+# se realizo la conexion clinte servidor "resuelvo ejercicios ws basico 01 echo"
 async def handler(websocket):
     await websocket.send("Conectado: ejercicio ws-basico-01-echo")
     async for message in websocket:
