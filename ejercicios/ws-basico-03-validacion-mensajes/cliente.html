@@ -8,7 +8,16 @@
 <body>
   <h1>WS Basico 03 - Validacion de JSON</h1>
   <p>Conectar a ws://localhost:8803</p>
-  <textarea id="msg" rows="5" cols="60">{"usuario":"equipo1","mensaje":"hola"}</textarea>
+  
+  <fieldset>
+    <legend>Ejemplos de comandos:</legend>
+    <button onclick="setExample('mensaje')">Mensaje</button>
+    <button onclick="setExample('echo')">Echo</button>
+    <button onclick="setExample('info')">Info</button>
+    <button onclick="setExample('ayuda')">Ayuda</button>
+  </fieldset>
+  
+  <textarea id="msg" rows="5" cols="60">{"tipo":"mensaje","usuario":"equipo1","mensaje":"hola"}</textarea>
   <br />
   <button id="send">Enviar JSON</button>
   <pre id="log"></pre>
@@ -20,6 +29,18 @@
     const ws = new WebSocket('ws://localhost:8803');
 
     const add = (t) => { log.textContent += t + '\n'; };
+    
+    // Función para cargar ejemplos de comandos
+    const setExample = (tipo) => {
+      const ejemplos = {
+        mensaje: '{"tipo":"mensaje","usuario":"equipo1","mensaje":"hola mundo"}',
+        echo: '{"tipo":"echo","mensaje":"repite esto"}',
+        info: '{"tipo":"info"}',
+        ayuda: '{"tipo":"ayuda"}'
+      };
+      input.value = ejemplos[tipo] || '';
+    };
+    
     ws.onopen = () => add('Conectado');
     ws.onmessage = (e) => add('Servidor: ' + e.data);
     ws.onclose = () => add('Conexion cerrada');
