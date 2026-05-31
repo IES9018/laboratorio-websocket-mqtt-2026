@@ -15,30 +15,41 @@ def main() -> None:
             cliente, direccion = sock.accept()
             print(f"Conexion desde {direccion}")
 
+            request = cliente.recv(1024).decode("utf-8")
+            print("Request recibido:")
+            print(request)
+
+            # Obtener la ruta
+            primera_linea = request.split("\n")[0]
+            ruta = primera_linea.split(" ")[1]
+
+            if ruta == "/saludo":
+                contenido = f"<h1>Hola {nombre}, estas en /saludo 😎</h1>"
+            else:
+                contenido = f"<h1>Hola estudiante {nombre}!</h1>"
+
             html = f"""
 <html>
 <head>
     <title>Mi servidor web</title>
-    <meta charset=\"UTF-8\" />
+    <meta charset="UTF-8" />
 </head>
 <body>
-    <h1>Hola exitoso estudiante {nombre}!</h1>
-    <p>Este servidor usa sockets TCP y protocolo HTTP manual.</p>
+    {contenido}
+    <p>Servidor con sockets + manejo de rutas básico</p>
 </body>
 </html>
 """
 
-            respuesta = b"HTTP/1.1 200 OK\r\n"
-            respuesta += b"Content-Type: text/html; charset=utf-8\r\n"
-            respuesta += b"\r\n"
-            cliente.sendall(respuesta + html.encode("utf-8"))
+            respuesta = "HTTP/1.1 200 OK\r\n"
+            respuesta += "Content-Type: text/html; charset=utf-8\r\n\r\n"
+            respuesta += html
+
+            cliente.sendall(respuesta.encode("utf-8"))
             cliente.close()
 
             time.sleep(0.5)
-            opcion = input("Desea cerrar el servidor? (s/n): ").lower().strip()
-            if opcion == "s":
-                print("Cerrando servidor...")
-                break
+
     finally:
         sock.close()
 
