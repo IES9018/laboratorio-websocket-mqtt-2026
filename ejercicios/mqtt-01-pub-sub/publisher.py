@@ -3,10 +3,9 @@ from datetime import datetime
 
 import paho.mqtt.client as mqtt
 
-BROKER = "test.mosquitto.org"
+BROKER = "localhost"
 PORT = 1883
-TOPIC = "ies9018/programacion3/demo"
-
+TOPIC = "ies9018/equipo1/demo"  # Cambiado por equipo
 
 def main() -> None:
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
@@ -23,11 +22,10 @@ def main() -> None:
             "timestamp": datetime.utcnow().isoformat(),
             "curso": "Programacion III",
         }
-        client.publish(TOPIC, json.dumps(payload), qos=1)
+        client.publish(TOPIC, json.dumps(payload), qos=0)  # QoS 0 para probar
         print(f"Publicado en {TOPIC}")
 
     client.disconnect()
-
 
 if __name__ == "__main__":
     main()

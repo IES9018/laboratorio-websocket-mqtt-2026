@@ -5,46 +5,171 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>WebSocket Echo - IES9018</title>
   <style>
-    body { font-family: sans-serif; margin: 24px; }
-    #log { border: 1px solid #ccc; padding: 12px; min-height: 180px; }
-    input, button { padding: 8px; }
+    body { font-family: sans-serif; margin: 24px; max-width: 900px; }
+    #auth-panel { background: #f0f0f0; padding: 15px; border-radius: 5px; margin-bottom: 15px; }
+    #chat-panel { display: none; }
+    #log { border: 1px solid #ccc; padding: 12px; min-height: 180px; background: #1e1e1e; color: #0f0; font-family: monospace; }
+    input, button, select { padding: 8px; margin: 5px 0; }
+    .error { color: #ff6b6b; }
+    .success { color: #51cf66; }
+    .json { color: #ffd43b; }
+    .panel { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 10px; }
   </style>
 </head>
 <body>
   <h1>Cliente WebSocket</h1>
   <p>Conectar contra <strong>ws://localhost:8765</strong></p>
 
-  <div>
-    <input id="msg" placeholder="Escribe un mensaje" />
-    <button id="send">Enviar</button>
+  <div id="auth-panel">
+    <h3>Autenticación</h3>
+    <input id="username" placeholder="Usuario" value="invitado" />
+    <input id="password" type="password" placeholder="Contraseña" value="invitado123" />
+    <button id="connect">Conectar</button>
+    <p><small>Credenciales: admin/admin123, user/user123, invitado/invitado123</small></p>
   </div>
 
-  <h3>Log</h3>
-  <div id="log"></div>
+  <div id="chat-panel">
+    <div class="panel">
+      <h4>Enviar mensaje</h4>
+      <select id="formato">
+        <option value="texto">Texto plano</option>
+        <option value="json">JSON estructurado</option>
+      </select>
+      <br>
+      <div id="panel-texto">
+        <input id="msg" placeholder="Escribe un mensaje" style="width: 70%;" />
+      </div>
+      <div id="panel-json" style="display: none;">
+        <input id="json-usuario" placeholder="usuario" value="invitado" />
+        <input id="json-mensaje" placeholder="mensaje" value="Hola mundo" />
+      </div>
+      <button id="send">Enviar</button>
+    </div>
+    <h3>Log</h3>
+    <div id="log"></div>
+  </div>
 
   <script>
     const log = document.getElementById('log');
     const input = document.getElementById('msg');
     const button = document.getElementById('send');
+    const authPanel = document.getElementById('auth-panel');
+    const chatPanel = document.getElementById('chat-panel');
+    const connectBtn = document.getElementById('connect');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const formatoSelect = document.getElementById('formato');
+    const panelTexto = document.getElementById('panel-texto');
+    const panelJson = document.getElementById('panel-json');
+    const jsonUsuario = document.getElementById('json-usuario');
+    const jsonMensaje = document.getElementById('json-mensaje');
+    
+    let ws = null;
+    let autenticado = false;
 
-    const ws = new WebSocket('ws://localhost:8765');
-
-    function add(text) {
+    function add(text, className = '') {
       const p = document.createElement('p');
       p.textContent = text;
+      if (className) p.className = className;
       log.appendChild(p);
     }
 
-    ws.onopen = () => add('Conectado');
-    ws.onmessage = (e) => add('Servidor: ' + e.data);
-    ws.onclose = () => add('Conexion cerrada');
-    ws.onerror = () => add('Error de conexion');
+    formatoSelect.onchange = () => {
+      if (formatoSelect.value === 'json') {
+        panelTexto.style.display = 'none';
+        panelJson.style.display = 'block';
+      } else {
+        panelTexto.style.display = 'block';
+        panelJson.style.display = 'none';
+      }
+    };
+
+    connectBtn.onclick = () => {
+      if (ws) ws.close();
+      
+      ws = new WebSocket('ws://localhost:8765');
+      
+      ws.onopen = () => add('Conectando...', 'success');
+      
+      ws.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          
+          if (data.tipo === 'auth_required') {
+            const authMsg = JSON.stringify({
+              username: usernameInput.value,
+              password: passwordInput.value
+            });
+            ws.send(authMsg);
+            add('Enviando credenciales...');
+          } else if (data.tipo === 'auth_success') {
+            autenticado = true;
+            authPanel.style.display = 'none';
+            chatPanel.style.display = 'block';
+            add(`Servidor: ${data.mensaje}`, 'success');
+            jsonUsuario.value = data.username || usernameInput.value;
+          } else if (data.tipo === 'auth_error') {
+            add(`Error: ${data.mensaje}`, 'error');
+          } else if (data.tipo === 'error') {
+            add(`Error ${data.codigo}: ${data.descripcion}`, 'error');
+          } else if (data.tipo === 'eco') {
+            add(`Servidor: ${data.usuario}: ${data.mensaje}`, 'success');
+          } else {
+            add('Servidor: ' + JSON.stringify(data, null, 2), 'json');
+          }
+        } catch {
+          add('Servidor: ' + e.data);
+        }
+      };
+      
+      ws.onclose = (e) => {
+        add(`Conexión cerrada: ${e.reason || 'Sin motivo'}`, 'error');
+        autenticado = false;
+        authPanel.style.display = 'block';
+        chatPanel.style.display = 'none';
+      };
+      
+      ws.onerror = () => add('Error de conexion', 'error');
+    };
 
     button.onclick = () => {
-      const value = input.value;
-      ws.send(value);
-      add('Cliente: ' + value);
-      input.value = '';
+      if (ws && autenticado && ws.readyState === WebSocket.OPEN) {
+        let mensaje;
+        
+        if (formatoSelect.value === 'json') {
+          mensaje = JSON.stringify({
+            usuario: jsonUsuario.value,
+            mensaje: jsonMensaje.value
+          });
+          add('Cliente (JSON): ' + mensaje, 'json');
+        } else {
+          mensaje = input.value;
+          add('Cliente: ' + mensaje);
+        }
+        
+        ws.send(mensaje);
+        
+        if (formatoSelect.value === 'texto') {
+          input.value = '';
+        } else {
+          jsonMensaje.value = '';
+        }
+      } else {
+        add('No conectado o no autenticado', 'error');
+      }
+    };
+  </script>
+</body>
+
+    button.onclick = () => {
+      if (ws && autenticado && ws.readyState === WebSocket.OPEN) {
+        const value = input.value;
+        ws.send(value);
+        add('Cliente: ' + value);
+        input.value = '';
+      } else {
+        add('No conectado o no autenticado', 'error');
+      }
     };
   </script>
 </body>
